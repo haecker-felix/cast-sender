@@ -1,5 +1,4 @@
 use crate::Payload;
-use serde::{Deserialize, Serialize};
 
 use super::Volume;
 

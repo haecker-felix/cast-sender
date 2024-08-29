@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use super::namespace::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -9,6 +7,7 @@ pub enum Payload {
     Heartbeat(Heartbeat),
     Multizone(Multizone),
     Receiver(Receiver),
+    // Fallback -> Needs to be last enum variant!
     Custom(Custom),
 }
 

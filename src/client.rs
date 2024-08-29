@@ -5,11 +5,20 @@ use async_net::{AsyncToSocketAddrs, TcpStream};
 use futures_util::io::{ReadHalf, WriteHalf};
 use futures_util::{AsyncReadExt, AsyncWriteExt};
 use prost::Message;
-use serde::{Deserialize, Serialize};
 use smol::lock::Mutex;
 
 use super::proto;
 use super::{Error, NamespaceUrn, Payload};
+
+#[derive(Debug, Clone)]
+pub struct Response {
+    pub request_id: Option<u32>,
+    // Probably not strictly necessary, since the namespace can be derived
+    // using the payload, but this may not have any guarantee of correctness,
+    // since the namespace may differ from the deserialized enum variant.
+    pub namespace: NamespaceUrn,
+    pub payload: Payload,
+}
 
 #[derive(Debug, Clone)]
 pub struct Client {
@@ -114,14 +123,4 @@ struct PayloadData {
     request_id: Option<u32>,
     #[serde(flatten)]
     data: Payload,
-}
-
-#[derive(Debug, Clone)]
-pub struct Response {
-    pub request_id: Option<u32>,
-    // Probably not strictly necessary, since the namespace can be derived
-    // using the payload, but this may not have any guarantee of correctness,
-    // since the namespace may differ from the deserialized enum variant.
-    pub namespace: NamespaceUrn,
-    pub payload: Payload,
 }

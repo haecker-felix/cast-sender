@@ -1,7 +1,4 @@
-use crate::Payload;
-use serde::{Deserialize, Serialize};
-
-use super::NamespaceUrn;
+use super::{NamespaceUrn, Payload};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

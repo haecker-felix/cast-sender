@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate serde_derive;
 
 mod proto {
     include!(concat!(env!("OUT_DIR"), "/openscreen.cast.proto.rs"));
