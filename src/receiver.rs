@@ -91,6 +91,11 @@ impl Receiver {
         self.client().await.is_some()
     }
 
+    /// Currently running applications
+    pub async fn applications(&self) -> Result<Vec<Application>, Error> {
+        Ok(self.status().await?.applications.unwrap_or_default())
+    }
+
     pub async fn launch_app(&self, app_id: String) -> Result<Application, Error> {
         let response = self
             .send_request(namespace::Receiver::launch_request(app_id.clone()))
@@ -122,16 +127,18 @@ impl Receiver {
         Ok(())
     }
 
+    pub async fn volume(&self) -> Result<Volume, Error> {
+        Ok(self.status().await?.volume)
+    }
+
     pub async fn set_volume(&self, level: f64, muted: bool) -> Result<(), Error> {
         self.send_request(namespace::Receiver::set_volume_request(level, muted))
             .await?;
         Ok(())
     }
 
-    pub async fn status(&self, app_id: String) -> Result<Status, Error> {
-        let response = self
-            .send_request(namespace::Receiver::launch_request(app_id.clone()))
-            .await?;
+    pub async fn status(&self) -> Result<Status, Error> {
+        let response = self.send_request(namespace::Receiver::GetStatus).await?;
 
         if let Payload::Receiver(payload) = response.payload {
             if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
