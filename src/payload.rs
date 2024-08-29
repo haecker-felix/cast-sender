@@ -7,6 +7,7 @@ use super::namespace::*;
 pub enum Payload {
     Connection(Connection),
     Heartbeat(Heartbeat),
+    Multizone(Multizone),
     Receiver(Receiver),
     Custom(Custom),
 }
@@ -14,8 +15,9 @@ pub enum Payload {
 impl Payload {
     pub fn namespace(&self) -> NamespaceUrn {
         match self {
-            Payload::Heartbeat(_) => NamespaceUrn::Heartbeat,
             Payload::Connection(_) => NamespaceUrn::Connection,
+            Payload::Heartbeat(_) => NamespaceUrn::Heartbeat,
+            Payload::Multizone(_) => NamespaceUrn::Multizone,
             Payload::Receiver(_) => NamespaceUrn::Receiver,
             Payload::Custom(pl) => pl.namespace.clone(),
         }

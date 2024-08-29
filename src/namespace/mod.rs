@@ -8,10 +8,12 @@ use crate::Payload;
 
 mod connection;
 mod heartbeat;
+mod multizone;
 mod receiver;
 
 pub use connection::*;
 pub use heartbeat::*;
+pub use multizone::*;
 pub use receiver::*;
 
 #[derive(EnumString, Display, Debug, Clone, Default)]
