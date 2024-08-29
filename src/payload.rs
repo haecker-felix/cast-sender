@@ -8,7 +8,7 @@ pub enum Payload {
     Connection(Connection),
     Heartbeat(Heartbeat),
     Receiver(Receiver),
-    Other(Other),
+    Custom(Custom),
 }
 
 impl Payload {
@@ -17,7 +17,7 @@ impl Payload {
             Payload::Heartbeat(_) => NamespaceUrn::Heartbeat,
             Payload::Connection(_) => NamespaceUrn::Connection,
             Payload::Receiver(_) => NamespaceUrn::Receiver,
-            Payload::Other(pl) => pl.namespace.clone(),
+            Payload::Custom(pl) => pl.namespace.clone(),
         }
     }
 }

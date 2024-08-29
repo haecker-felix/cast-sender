@@ -1,6 +1,8 @@
 use crate::Payload;
 use serde::{Deserialize, Serialize};
 
+use super::NamespaceUrn;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[serde(tag = "type")]
@@ -69,7 +71,7 @@ pub struct Application {
     pub icon_url: String,
     pub is_idle_screen: bool,
     pub launched_from_cloud: bool,
-    // namespaces
+    pub namespaces: Vec<NamespaceUrn>,
     pub session_id: String,
     pub status_text: String,
     pub transport_id: String,

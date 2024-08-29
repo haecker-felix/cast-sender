@@ -53,7 +53,7 @@ impl Client {
         let ns: NamespaceUrn = msg.namespace.parse().unwrap();
         let mut pl: PayloadData = serde_json::from_str(msg.payload_utf8())?;
 
-        if let Payload::Other(u) = &mut pl.data {
+        if let Payload::Custom(u) = &mut pl.data {
             u.namespace = ns.clone();
         };
 

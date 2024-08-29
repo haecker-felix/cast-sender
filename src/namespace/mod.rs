@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use strum_macros::{Display, EnumString};
 
@@ -16,33 +16,73 @@ pub use receiver::*;
 
 #[derive(EnumString, Display, Debug, Clone, Default)]
 pub enum NamespaceUrn {
+    #[strum(serialize = "urn:x-cast:com.google.cast.cac")]
+    Cac,
     #[default]
     #[strum(serialize = "urn:x-cast:com.google.cast.tp.connection")]
     Connection,
-    #[strum(serialize = "urn:x-cast:com.google.cast.tp.heartbeat")]
-    Heartbeat,
-    #[strum(serialize = "urn:x-cast:com.google.cast.receiver")]
-    Receiver,
+    #[strum(default)]
+    Custom(String),
+    #[strum(serialize = "urn:x-cast:com.google.cast.debugoverlay")]
+    DebugOverlay,
     #[strum(serialize = "urn:x-cast:com.google.cast.tp.deviceauth")]
     DeviceAuth,
+    #[strum(serialize = "urn:x-cast:com.google.cast.tp.heartbeat")]
+    Heartbeat,
     #[strum(serialize = "urn:x-cast:com.google.cast.multizone")]
     Multizone,
-    #[strum(default)]
-    Other(String),
+    #[strum(serialize = "urn:x-cast:com.google.cast.receiver")]
+    Receiver,
+    #[strum(serialize = "urn:x-cast:com.google.cast.remotecontrol")]
+    RemoteControl,
+    #[strum(serialize = "urn:x-cast:com.google.cast.sse")]
+    Sse,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[serde(tag = "type")]
-pub struct Other {
+pub struct Custom {
     #[serde(skip)]
     pub namespace: NamespaceUrn,
     #[serde(flatten)]
     pub fields: HashMap<String, Value>,
 }
 
-impl Into<Payload> for Other {
+impl Into<Payload> for Custom {
     fn into(self) -> Payload {
-        Payload::Other(self.clone())
+        Payload::Custom(self.clone())
+    }
+}
+
+impl<'de> Deserialize<'de> for NamespaceUrn {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        pub struct Namespace {
+            name: String,
+        }
+
+        let ns = Namespace::deserialize(deserializer)?;
+        NamespaceUrn::from_str(&ns.name).map_err(serde::de::Error::custom)
+    }
+}
+
+impl Serialize for NamespaceUrn {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        #[derive(Serialize)]
+        pub struct Namespace {
+            name: String,
+        }
+
+        Namespace {
+            name: self.to_string(),
+        }
+        .serialize(serializer)
     }
 }
