@@ -80,8 +80,9 @@ impl Client {
 
     pub async fn send_full(&self, payload: Payload, request_id: Option<u32>) -> Result<(), Error> {
         debug!(
-            "Send [{:?}]: {}",
+            "Send [{:?}] ({:?}): {}",
             payload.namespace(),
+            request_id,
             serde_json::to_string(&payload).unwrap()
         );
 

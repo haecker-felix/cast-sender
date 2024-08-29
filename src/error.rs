@@ -30,4 +30,7 @@ pub enum Error {
 
     #[error("Unable to launch app: {0}")]
     LaunchError(String),
+
+    #[error("Did not receive a matching response")]
+    NoResponse,
 }

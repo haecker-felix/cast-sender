@@ -113,7 +113,7 @@ impl Receiver {
             }
         }
 
-        Err(Error::LaunchError("App did not start".into()))
+        Err(Error::NoResponse)
     }
 
     pub async fn stop_app(&self, app: &Application) -> Result<(), Error> {
@@ -126,6 +126,21 @@ impl Receiver {
         self.send_request(namespace::Receiver::set_volume_request(level, muted))
             .await?;
         Ok(())
+    }
+
+    pub async fn status(&self, app_id: String) -> Result<Status, Error> {
+        let response = self
+            .send_request(namespace::Receiver::launch_request(app_id.clone()))
+            .await?;
+
+        if let Payload::Receiver(payload) = response.payload {
+            if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
+            {
+                return Ok(status);
+            }
+        }
+
+        Err(Error::NoResponse)
     }
 
     async fn send_request<P: Into<Payload>>(&self, payload: P) -> Result<Response, Error> {
