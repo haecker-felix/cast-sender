@@ -14,5 +14,5 @@ mod receiver;
 pub use client::{Client, Response};
 pub use error::Error;
 pub use namespace::NamespaceUrn;
-pub use payload::{Payload, Volume};
+pub use payload::Payload;
 pub use receiver::Receiver;

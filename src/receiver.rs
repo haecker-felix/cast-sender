@@ -10,7 +10,6 @@ use smol_timeout::TimeoutExt;
 
 use crate::namespace;
 use crate::namespace::*;
-use crate::payload::*;
 use crate::Response;
 
 use super::{Client, Error, Payload};

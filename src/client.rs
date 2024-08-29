@@ -51,7 +51,11 @@ impl Client {
 
         let msg: proto::CastMessage = proto::CastMessage::decode(&buf[..])?;
         let ns: NamespaceUrn = msg.namespace.parse().unwrap();
-        let pl: PayloadData = serde_json::from_str(msg.payload_utf8())?;
+        let mut pl: PayloadData = serde_json::from_str(msg.payload_utf8())?;
+
+        if let Payload::Other(u) = &mut pl.data {
+            u.namespace = ns.clone();
+        };
 
         debug!("Received [{:?}]: {:#?}", ns, pl);
         Ok(Response {
