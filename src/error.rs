@@ -27,4 +27,7 @@ pub enum Error {
 
     #[error("Not connected with receiver")]
     NoConnection,
+
+    #[error("Unable to launch app: {0}")]
+    LaunchError(String),
 }

@@ -91,15 +91,40 @@ impl Receiver {
         self.client().await.is_some()
     }
 
+    pub async fn launch_app(&self, app_id: String) -> Result<Application, Error> {
+        let response = self
+            .send_request(namespace::Receiver::launch_request(app_id.clone()))
+            .await?;
+
+        if let Payload::Receiver(payload) = response.payload {
+            if let namespace::Receiver::LaunchError(LaunchErrorResponse { reason }) = payload {
+                return Err(Error::LaunchError(reason));
+            }
+
+            if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
+            {
+                if let Some(apps) = status.applications {
+                    for app in apps {
+                        if app.app_id == app_id {
+                            return Ok(app);
+                        }
+                    }
+                }
+            }
+        }
+
+        Err(Error::LaunchError("App did not start".into()))
+    }
+
+    pub async fn stop_app(&self, app: &Application) -> Result<(), Error> {
+        self.send_request(namespace::Receiver::stop_request(app.session_id.clone()))
+            .await?;
+        Ok(())
+    }
+
     pub async fn set_volume(&self, level: f64, muted: bool) -> Result<(), Error> {
-        self.send_request(namespace::Receiver::SetVolume(SetVolumeRequest {
-            volume: Volume {
-                control_type: None,
-                muted,
-                level,
-            },
-        }))
-        .await?;
+        self.send_request(namespace::Receiver::set_volume_request(level, muted))
+            .await?;
         Ok(())
     }
 

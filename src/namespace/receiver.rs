@@ -9,6 +9,27 @@ pub enum Receiver {
     Launch(LaunchRequest),
     SetVolume(SetVolumeRequest),
     Stop(StopRequest),
+    LaunchError(LaunchErrorResponse),
+}
+
+impl Receiver {
+    pub fn set_volume_request(level: f64, muted: bool) -> Self {
+        Self::SetVolume(SetVolumeRequest {
+            volume: Volume {
+                control_type: None,
+                muted,
+                level,
+            },
+        })
+    }
+
+    pub fn launch_request(app_id: String) -> Self {
+        Self::Launch(LaunchRequest { app_id })
+    }
+
+    pub fn stop_request(session_id: String) -> Self {
+        Self::Stop(StopRequest { session_id })
+    }
 }
 
 impl Into<Payload> for Receiver {
@@ -39,6 +60,12 @@ pub struct SetVolumeRequest {
 #[serde(rename_all = "camelCase")]
 pub struct ReceiverStatusResponse {
     pub status: Status,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct LaunchErrorResponse {
+    pub reason: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
