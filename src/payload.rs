@@ -5,6 +5,7 @@ use super::namespace::*;
 pub enum Payload {
     Connection(Connection),
     Heartbeat(Heartbeat),
+    Media(Media),
     Multizone(Multizone),
     Receiver(Receiver),
     // Fallback -> Needs to be last enum variant!
@@ -16,6 +17,7 @@ impl Payload {
         match self {
             Payload::Connection(_) => NamespaceUrn::Connection,
             Payload::Heartbeat(_) => NamespaceUrn::Heartbeat,
+            Payload::Media(_) => NamespaceUrn::Media,
             Payload::Multizone(_) => NamespaceUrn::Multizone,
             Payload::Receiver(_) => NamespaceUrn::Receiver,
             Payload::Custom(pl) => pl.namespace.clone(),

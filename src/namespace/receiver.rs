@@ -4,12 +4,15 @@ use super::{NamespaceUrn, Payload};
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 #[serde(tag = "type")]
 pub enum Receiver {
+    // Request
     GetStatus,
-    ReceiverStatus(ReceiverStatusResponse),
     Launch(LaunchRequest),
     SetVolume(SetVolumeRequest),
     Stop(StopRequest),
     LaunchError(LaunchErrorResponse),
+
+    // Response
+    ReceiverStatus(ReceiverStatusResponse),
 }
 
 impl Receiver {
@@ -17,8 +20,8 @@ impl Receiver {
         Self::SetVolume(SetVolumeRequest {
             volume: Volume {
                 control_type: None,
-                muted,
-                level,
+                muted: Some(muted),
+                level: Some(level),
             },
         })
     }
@@ -73,8 +76,10 @@ pub struct LaunchErrorResponse {
 pub struct Volume {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub control_type: Option<String>,
-    pub muted: bool,
-    pub level: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub muted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub level: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

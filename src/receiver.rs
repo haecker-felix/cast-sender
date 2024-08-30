@@ -28,6 +28,19 @@ impl Receiver {
         Self::default()
     }
 
+    // TODO: Delete me, just a prototype
+    pub async fn load_test(
+        &self,
+        media: MediaInformation,
+        autoplay: Option<bool>,
+        current_time: Option<f64>,
+    ) -> Result<(), Error> {
+        self.send_request(namespace::Media::load(media, autoplay, current_time))
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn connect<A: AsyncToSocketAddrs + Into<Host> + Clone>(
         &self,
         addr: A,

@@ -8,11 +8,13 @@ use crate::Payload;
 
 mod connection;
 mod heartbeat;
+mod media;
 mod multizone;
 mod receiver;
 
 pub use connection::*;
 pub use heartbeat::*;
+pub use media::*;
 pub use multizone::*;
 pub use receiver::*;
 
@@ -31,6 +33,8 @@ pub enum NamespaceUrn {
     DeviceAuth,
     #[strum(serialize = "urn:x-cast:com.google.cast.tp.heartbeat")]
     Heartbeat,
+    #[strum(serialize = "urn:x-cast:com.google.cast.media")]
+    Media,
     #[strum(serialize = "urn:x-cast:com.google.cast.multizone")]
     Multizone,
     #[strum(serialize = "urn:x-cast:com.google.cast.receiver")]
