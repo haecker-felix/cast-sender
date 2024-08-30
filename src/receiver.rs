@@ -10,35 +10,28 @@ use smol_timeout::TimeoutExt;
 
 use crate::namespace;
 use crate::namespace::*;
-use crate::Response;
+use crate::{Application, Response};
 
 use super::{Client, Error, Payload};
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Receiver {
     client: Arc<Mutex<Option<Client>>>,
-    requests: Arc<Mutex<HashMap<u32, Sender<Response>>>>,
+    receiver: Application,
 
     // Ids for request messages which get incremented
     request_id: Arc<Mutex<u32>>,
+    requests: Arc<Mutex<HashMap<u32, Sender<Response>>>>,
 }
 
 impl Receiver {
     pub fn new() -> Self {
-        Self::default()
-    }
-
-    // TODO: Delete me, just a prototype
-    pub async fn load_test(
-        &self,
-        media: MediaInformation,
-        autoplay: Option<bool>,
-        current_time: Option<f64>,
-    ) -> Result<(), Error> {
-        self.send_request(namespace::Media::load(media, autoplay, current_time))
-            .await?;
-
-        Ok(())
+        Self {
+            client: Arc::default(),
+            receiver: Application::receiver(),
+            request_id: Arc::default(),
+            requests: Arc::default(),
+        }
     }
 
     pub async fn connect<A: AsyncToSocketAddrs + Into<Host> + Clone>(
@@ -49,10 +42,10 @@ impl Receiver {
         self.client.lock().await.replace(client.clone());
 
         // Establish virtual connection with cast receiver
-        client.send(Connection::Connect).await?;
+        self.send(&self.receiver, Connection::Connect).await?;
 
         // Ensure we're successfully connected by doing a ping <-> pong sequence
-        client.send(Heartbeat::Ping).await?;
+        self.send(&self.receiver, Heartbeat::Ping).await?;
         client.receive().await?;
 
         // Spawn own task to receive messages from the receiver
@@ -85,19 +78,14 @@ impl Receiver {
 
     /// Only closes the underlying connection, does not stop any running applications.
     pub async fn disconnect(&self) {
+        // Try to close the virtual connection, but don't care about the result
+        self.send(&self.receiver, Connection::Close).await;
+
         let mut client = self.client.lock().await;
-
-        if let Some(client) = &*client {
-            // Try to close the virtual connection, but don't care about the result
-            let _ = client.send(Connection::Close).await;
-
-            // Reset requestId counter
-            *self.request_id.lock().await = 0;
-        } else {
-            debug!("Not connected to receiver, no need to disconnect");
-        }
-
         *client = None;
+
+        // Reset requestId counter
+        *self.request_id.lock().await = 0;
     }
 
     pub async fn is_connected(&self) -> bool {
@@ -111,7 +99,10 @@ impl Receiver {
 
     pub async fn launch_app(&self, app_id: String) -> Result<Application, Error> {
         let response = self
-            .send_request(namespace::Receiver::launch_request(app_id.clone()))
+            .send_request(
+                &self.receiver,
+                namespace::Receiver::launch_request(app_id.clone()),
+            )
             .await?;
 
         if let Payload::Receiver(payload) = response.payload {
@@ -124,6 +115,8 @@ impl Receiver {
                 if let Some(apps) = status.applications {
                     for app in apps {
                         if app.app_id == app_id {
+                            // Establish new virtual connection to be able to send/receive app specific payloads
+                            self.send(&self.receiver, Connection::Connect).await?;
                             return Ok(app);
                         }
                     }
@@ -135,8 +128,11 @@ impl Receiver {
     }
 
     pub async fn stop_app(&self, app: &Application) -> Result<(), Error> {
-        self.send_request(namespace::Receiver::stop_request(app.session_id.clone()))
-            .await?;
+        self.send_request(
+            &self.receiver,
+            namespace::Receiver::stop_request(app.session_id.clone()),
+        )
+        .await?;
         Ok(())
     }
 
@@ -145,13 +141,18 @@ impl Receiver {
     }
 
     pub async fn set_volume(&self, level: f64, muted: bool) -> Result<(), Error> {
-        self.send_request(namespace::Receiver::set_volume_request(level, muted))
-            .await?;
+        self.send_request(
+            &self.receiver,
+            namespace::Receiver::set_volume_request(level, muted),
+        )
+        .await?;
         Ok(())
     }
 
     pub async fn status(&self) -> Result<Status, Error> {
-        let response = self.send_request(namespace::Receiver::GetStatus).await?;
+        let response = self
+            .send_request(&self.receiver, namespace::Receiver::GetStatus)
+            .await?;
 
         if let Payload::Receiver(payload) = response.payload {
             if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
@@ -163,7 +164,25 @@ impl Receiver {
         Err(Error::NoResponse)
     }
 
-    async fn send_request<P: Into<Payload>>(&self, payload: P) -> Result<Response, Error> {
+    pub async fn send<P: Into<Payload>>(&self, app: &Application, payload: P) -> Result<(), Error> {
+        let client = match self.client().await {
+            Some(client) => client,
+            None => {
+                return Err(Error::NoConnection);
+            }
+        };
+
+        client
+            .send(app.transport_id.clone(), payload.into(), None)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn send_request<P: Into<Payload>>(
+        &self,
+        app: &Application,
+        payload: P,
+    ) -> Result<Response, Error> {
         let client = match self.client().await {
             Some(client) => client,
             None => {
@@ -185,7 +204,9 @@ impl Receiver {
         requests.insert(request_id, response_tx);
         drop(requests);
 
-        client.send_full(payload.into(), Some(request_id)).await?;
+        client
+            .send(app.transport_id.clone(), payload.into(), Some(request_id))
+            .await?;
 
         // Wait up to 10 seconds before giving up the request
         let res = response_rx.recv().timeout(Duration::from_secs(10)).await;
@@ -212,12 +233,12 @@ impl Receiver {
 
         match &response.payload {
             Payload::Heartbeat(heartbeat_message) => {
-                if let Some(client) = self.client().await {
-                    match heartbeat_message {
-                        Heartbeat::Ping => client.send(Heartbeat::Pong).await?,
-                        _ => (),
-                    };
-                }
+                match heartbeat_message {
+                    Heartbeat::Ping => {
+                        self.send(&self.receiver, Heartbeat::Pong).await?;
+                    }
+                    _ => (),
+                };
             }
             _ => (),
         }
@@ -227,5 +248,11 @@ impl Receiver {
 
     async fn client(&self) -> Option<Client> {
         self.client.lock().await.clone()
+    }
+}
+
+impl Default for Receiver {
+    fn default() -> Self {
+        Self::new()
     }
 }

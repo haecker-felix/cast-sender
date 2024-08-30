@@ -12,12 +12,15 @@ use super::{Error, NamespaceUrn, Payload};
 
 #[derive(Debug, Clone)]
 pub struct Response {
-    pub request_id: Option<u32>,
+    pub source_id: String,
+    pub destination_id: String,
     // Probably not strictly necessary, since the namespace can be derived
     // using the payload, but this may not have any guarantee of correctness,
     // since the namespace may differ from the deserialized enum variant.
     pub namespace: NamespaceUrn,
     pub payload: Payload,
+    // Part of the payload
+    pub request_id: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -66,43 +69,53 @@ impl Client {
             u.namespace = ns.clone();
         };
 
-        debug!("Received [{:?}]: {:#?}", ns, pl);
+        debug!(
+            "[RECV] {} -> {} | Namespace: {:?} | Request: {:?}",
+            msg.source_id, msg.destination_id, ns, pl.request_id
+        );
+        debug!("       {:#?}", pl);
         Ok(Response {
-            request_id: pl.request_id,
+            source_id: msg.source_id,
+            destination_id: msg.destination_id,
             namespace: ns,
             payload: pl.data,
+            request_id: pl.request_id,
         })
     }
 
-    pub async fn send<P: Into<Payload>>(&self, payload: P) -> Result<(), Error> {
-        self.send_full(payload.into(), None).await
-    }
-
-    pub async fn send_full(&self, payload: Payload, request_id: Option<u32>) -> Result<(), Error> {
-        debug!(
-            "Send [{:?}] ({:?}): {}",
-            payload.namespace(),
-            request_id,
-            serde_json::to_string(&payload).unwrap()
-        );
-
-        let namespace = payload.namespace();
+    pub async fn send<P: Into<Payload>>(
+        &self,
+        destination_id: String,
+        payload: P,
+        request_id: Option<u32>,
+    ) -> Result<(), Error> {
+        let payload: Payload = payload.into();
         let payload_data = PayloadData {
-            request_id,
-            data: payload,
+            request_id: request_id.clone(),
+            data: payload.clone(),
         };
 
+        let payload_json = serde_json::to_string(&payload_data).unwrap();
         let msg = proto::CastMessage {
             protocol_version: proto::cast_message::ProtocolVersion::Castv210.into(),
             source_id: "sender-0".into(),
-            destination_id: "receiver-0".into(),
-            namespace: namespace.to_string(),
+            destination_id: destination_id,
+            namespace: payload.namespace().to_string(),
             payload_type: proto::cast_message::PayloadType::String.into(),
-            payload_utf8: Some(serde_json::to_string(&payload_data).unwrap()),
+            payload_utf8: Some(payload_json.clone()),
             payload_binary: None,
             continued: None,
             remaining_length: None,
         };
+
+        debug!(
+            "[SEND] {} -> {} | Namespace: {:?} | Request: {:?}",
+            msg.source_id,
+            msg.destination_id,
+            payload.namespace(),
+            request_id,
+        );
+        debug!("       {}", payload_json);
 
         let mut write_stream = self.write_stream.lock().await;
         let len: u32 = msg.encoded_len().try_into().unwrap();
