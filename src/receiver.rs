@@ -8,16 +8,15 @@ use async_net::AsyncToSocketAddrs;
 use smol::lock::Mutex;
 use smol_timeout::TimeoutExt;
 
-use crate::namespace;
-use crate::namespace::*;
-use crate::{Application, Response};
+use crate::namespace::{connection::*, heartbeat::*, receiver, receiver::*};
+use crate::{Application, Response, Volume};
 
 use super::{Client, Error, Payload};
 
 #[derive(Debug, Clone)]
 pub struct Receiver {
     client: Arc<Mutex<Option<Client>>>,
-    receiver: Application,
+    platform: Application,
 
     // Ids for request messages which get incremented
     request_id: Arc<Mutex<u32>>,
@@ -28,7 +27,7 @@ impl Receiver {
     pub fn new() -> Self {
         Self {
             client: Arc::default(),
-            receiver: Application::receiver(),
+            platform: Application::receiver(),
             request_id: Arc::default(),
             requests: Arc::default(),
         }
@@ -42,10 +41,10 @@ impl Receiver {
         self.client.lock().await.replace(client.clone());
 
         // Establish virtual connection with cast receiver
-        self.send(&self.receiver, Connection::Connect).await?;
+        self.send(&self.platform, Connection::Connect).await?;
 
         // Ensure we're successfully connected by doing a ping <-> pong sequence
-        self.send(&self.receiver, Heartbeat::Ping).await?;
+        self.send(&self.platform, Heartbeat::Ping).await?;
         client.receive().await?;
 
         // Spawn own task to receive messages from the receiver
@@ -79,7 +78,7 @@ impl Receiver {
     /// Only closes the underlying connection, does not stop any running applications.
     pub async fn disconnect(&self) {
         // Try to close the virtual connection, but don't care about the result
-        self.send(&self.receiver, Connection::Close).await;
+        let _ = self.send(&self.platform, Connection::Close).await;
 
         let mut client = self.client.lock().await;
         *client = None;
@@ -100,23 +99,22 @@ impl Receiver {
     pub async fn launch_app(&self, app_id: String) -> Result<Application, Error> {
         let response = self
             .send_request(
-                &self.receiver,
-                namespace::Receiver::launch_request(app_id.clone()),
+                &self.platform,
+                receiver::Receiver::launch_request(app_id.clone()),
             )
             .await?;
 
         if let Payload::Receiver(payload) = response.payload {
-            if let namespace::Receiver::LaunchError(LaunchErrorResponse { reason }) = payload {
+            if let receiver::Receiver::LaunchError(LaunchErrorResponse { reason }) = payload {
                 return Err(Error::LaunchError(reason));
             }
 
-            if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
-            {
+            if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload {
                 if let Some(apps) = status.applications {
                     for app in apps {
                         if app.app_id == app_id {
                             // Establish new virtual connection to be able to send/receive app specific payloads
-                            self.send(&self.receiver, Connection::Connect).await?;
+                            self.send(&app, Connection::Connect).await?;
                             return Ok(app);
                         }
                     }
@@ -129,8 +127,8 @@ impl Receiver {
 
     pub async fn stop_app(&self, app: &Application) -> Result<(), Error> {
         self.send_request(
-            &self.receiver,
-            namespace::Receiver::stop_request(app.session_id.clone()),
+            &self.platform,
+            receiver::Receiver::stop_request(app.session_id.clone()),
         )
         .await?;
         Ok(())
@@ -142,8 +140,8 @@ impl Receiver {
 
     pub async fn set_volume(&self, level: f64, muted: bool) -> Result<(), Error> {
         self.send_request(
-            &self.receiver,
-            namespace::Receiver::set_volume_request(level, muted),
+            &self.platform,
+            receiver::Receiver::set_volume_request(level, muted),
         )
         .await?;
         Ok(())
@@ -151,12 +149,11 @@ impl Receiver {
 
     pub async fn status(&self) -> Result<Status, Error> {
         let response = self
-            .send_request(&self.receiver, namespace::Receiver::GetStatus)
+            .send_request(&self.platform, receiver::Receiver::GetStatus)
             .await?;
 
         if let Payload::Receiver(payload) = response.payload {
-            if let namespace::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
-            {
+            if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload {
                 return Ok(status);
             }
         }
@@ -235,7 +232,7 @@ impl Receiver {
             Payload::Heartbeat(heartbeat_message) => {
                 match heartbeat_message {
                     Heartbeat::Ping => {
-                        self.send(&self.receiver, Heartbeat::Pong).await?;
+                        self.send(&self.platform, Heartbeat::Pong).await?;
                     }
                     _ => (),
                 };

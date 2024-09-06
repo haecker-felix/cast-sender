@@ -8,7 +8,7 @@ use prost::Message;
 use smol::lock::Mutex;
 
 use super::proto;
-use super::{Error, NamespaceUrn, Payload};
+use super::{namespace::NamespaceUrn, Error, Payload};
 
 #[derive(Debug, Clone)]
 pub struct Response {

@@ -1,5 +1,4 @@
-use super::Payload;
-use crate::Application;
+use crate::{Application, Payload, Volume};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -70,17 +69,6 @@ pub struct ReceiverStatusResponse {
 #[serde(rename_all = "camelCase")]
 pub struct LaunchErrorResponse {
     pub reason: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct Volume {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub control_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub muted: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub level: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

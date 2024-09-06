@@ -1,6 +1,4 @@
-use crate::{Error, Payload, Receiver, Response};
-
-use super::NamespaceUrn;
+use crate::namespace::NamespaceUrn;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]

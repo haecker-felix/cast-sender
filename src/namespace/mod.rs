@@ -6,17 +6,11 @@ use strum_macros::{Display, EnumString};
 
 use crate::Payload;
 
-mod connection;
-mod heartbeat;
-mod media;
-mod multizone;
-mod receiver;
-
-pub use connection::*;
-pub use heartbeat::*;
-pub use media::*;
-pub use multizone::*;
-pub use receiver::*;
+pub mod connection;
+pub mod heartbeat;
+pub mod media;
+pub mod multizone;
+pub mod receiver;
 
 #[derive(EnumString, Display, Debug, Clone, Default)]
 pub enum NamespaceUrn {

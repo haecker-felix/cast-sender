@@ -1,4 +1,6 @@
-use super::namespace::*;
+use crate::namespace::{
+    connection::*, heartbeat::*, media::*, multizone::*, receiver::*, Custom, NamespaceUrn,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]

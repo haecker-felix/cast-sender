@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::namespace::media::ErrorReason;
+
 use super::Response;
 
 #[derive(Error, Debug)]
@@ -31,6 +33,24 @@ pub enum Error {
     #[error("Unable to launch app: {0}")]
     LaunchError(String),
 
+    #[error("Media Channel Error: {0}")]
+    MediaError(MediaError),
+
     #[error("Did not receive a matching response")]
     NoResponse,
+}
+
+#[derive(Error, Debug)]
+pub enum MediaError {
+    #[error("Invalid Request")]
+    InvalidRequest(ErrorReason),
+
+    #[error("Invalid Player State")]
+    InvalidPlayerState,
+
+    #[error("Load Failed")]
+    LoadFailed,
+
+    #[error("Load Cancelled")]
+    LoadCancelled,
 }

@@ -1,6 +1,6 @@
 use crate::Payload;
 
-use super::Volume;
+use crate::Volume;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
