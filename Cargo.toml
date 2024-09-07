@@ -7,13 +7,14 @@ license = "MIT"
 repository = "https://github.com/haecker-felix/cast-sender"
 keywords = ["chromecast", "cast", "castv2"]
 description = "Fully asynchronous implementation of the Google Cast CASTV2 protocol, allowing communication with receivers such as Chromecast or Google TV devices."
+documentation = "https://docs.rs/cast_sender"
+categories = ["network-programming", "multimedia", "api-bindings"]
 
 [dependencies]
 async-channel = "2.3"
 async-native-tls = "0.5"
 async-net = "2.0"
 bitflags = "2.6"
-bytes = "1.7"
 derive_builder = "0.20.1"
 futures-util = "0.3"
 log = "0.4"
