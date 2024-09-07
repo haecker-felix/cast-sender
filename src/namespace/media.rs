@@ -733,7 +733,7 @@ pub struct TextTrackStyle {
     pub edge_color: Option<String>,
     pub edge_type: Option<TextTrackEdgeType>,
     pub font_family: Option<String>,
-    pub font_generic_familiy: Option<TextTrackFontGenericFamily>,
+    pub font_generic_family: Option<TextTrackFontGenericFamily>,
     pub font_scale: Option<i32>,
     pub font_style: Option<TextTrackFontStyle>,
     pub foreground_color: Option<String>,
