@@ -9,9 +9,9 @@ pub enum Multizone {
     DeviceUpdated(DeviceResponse),
 }
 
-impl Into<Payload> for Multizone {
-    fn into(self) -> Payload {
-        Payload::Multizone(self.clone())
+impl From<Multizone> for Payload {
+    fn from(val: Multizone) -> Self {
+        Payload::Multizone(val.clone())
     }
 }
 

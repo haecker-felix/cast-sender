@@ -8,8 +8,8 @@ pub enum Heartbeat {
     Pong,
 }
 
-impl Into<Payload> for Heartbeat {
-    fn into(self) -> Payload {
-        Payload::Heartbeat(self.clone())
+impl From<Heartbeat> for Payload {
+    fn from(val: Heartbeat) -> Self {
+        Payload::Heartbeat(val.clone())
     }
 }

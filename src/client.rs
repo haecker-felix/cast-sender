@@ -92,7 +92,7 @@ impl Client {
     ) -> Result<(), Error> {
         let payload: Payload = payload.into();
         let payload_data = PayloadData {
-            request_id: request_id.clone(),
+            request_id,
             data: payload.clone(),
         };
 
@@ -100,7 +100,7 @@ impl Client {
         let msg = proto::CastMessage {
             protocol_version: proto::cast_message::ProtocolVersion::Castv210.into(),
             source_id: "sender-0".into(),
-            destination_id: destination_id,
+            destination_id,
             namespace: payload.namespace().to_string(),
             payload_type: proto::cast_message::PayloadType::String.into(),
             payload_utf8: Some(payload_json.clone()),

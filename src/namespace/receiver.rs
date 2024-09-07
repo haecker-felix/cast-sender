@@ -37,9 +37,9 @@ impl Receiver {
     }
 }
 
-impl Into<Payload> for Receiver {
-    fn into(self) -> Payload {
-        Payload::Receiver(self.clone())
+impl From<Receiver> for Payload {
+    fn from(val: Receiver) -> Self {
+        Payload::Receiver(val.clone())
     }
 }
 

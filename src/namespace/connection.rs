@@ -8,8 +8,8 @@ pub enum Connection {
     Close,
 }
 
-impl Into<Payload> for Connection {
-    fn into(self) -> Payload {
-        Payload::Connection(self.clone())
+impl From<Connection> for Payload {
+    fn from(val: Connection) -> Self {
+        Payload::Connection(val.clone())
     }
 }

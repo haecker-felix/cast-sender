@@ -55,9 +55,9 @@ pub enum Media {
     LoadCancelled,
 }
 
-impl Into<Payload> for Media {
-    fn into(self) -> Payload {
-        Payload::Media(self.clone())
+impl From<Media> for Payload {
+    fn from(val: Media) -> Self {
+        Payload::Media(val.clone())
     }
 }
 
@@ -383,10 +383,10 @@ pub struct AudiobookChapterMediaMetadata {
     pub title: Option<String>,
 }
 
-impl Into<MediaMetadata> for AudiobookChapterMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<AudiobookChapterMediaMetadata> for MediaMetadata {
+    fn from(val: AudiobookChapterMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::AudiobookChapter(self),
+            metadata_type: MetadataType::AudiobookChapter(val),
             ..Default::default()
         }
     }
@@ -487,10 +487,10 @@ pub struct GenericMediaMetadata {
     pub title: Option<String>,
 }
 
-impl Into<MediaMetadata> for GenericMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<GenericMediaMetadata> for MediaMetadata {
+    fn from(val: GenericMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::Generic(self),
+            metadata_type: MetadataType::Generic(val),
             ..Default::default()
         }
     }
@@ -593,10 +593,10 @@ pub struct MovieMediaMetadata {
     pub title: Option<String>,
 }
 
-impl Into<MediaMetadata> for MovieMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<MovieMediaMetadata> for MediaMetadata {
+    fn from(val: MovieMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::Movie(self),
+            metadata_type: MetadataType::Movie(val),
             ..Default::default()
         }
     }
@@ -621,10 +621,10 @@ pub struct MusicTrackMediaMetadata {
     pub track_number: Option<i32>,
 }
 
-impl Into<MediaMetadata> for MusicTrackMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<MusicTrackMediaMetadata> for MediaMetadata {
+    fn from(val: MusicTrackMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::MusicTrack(self),
+            metadata_type: MetadataType::MusicTrack(val),
             ..Default::default()
         }
     }
@@ -647,10 +647,10 @@ pub struct PhotoMediaMetadata {
     pub width: Option<u32>,
 }
 
-impl Into<MediaMetadata> for PhotoMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<PhotoMediaMetadata> for MediaMetadata {
+    fn from(val: PhotoMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::Photo(self),
+            metadata_type: MetadataType::Photo(val),
             ..Default::default()
         }
     }
@@ -787,10 +787,10 @@ pub struct TvShowMediaMetadata {
     pub title: Option<String>,
 }
 
-impl Into<MediaMetadata> for TvShowMediaMetadata {
-    fn into(self) -> MediaMetadata {
+impl From<TvShowMediaMetadata> for MediaMetadata {
+    fn from(val: TvShowMediaMetadata) -> Self {
         MediaMetadata {
-            metadata_type: MetadataType::TvShow(self),
+            metadata_type: MetadataType::TvShow(val),
             ..Default::default()
         }
     }

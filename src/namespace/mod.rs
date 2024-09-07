@@ -49,9 +49,9 @@ pub struct Custom {
     pub fields: HashMap<String, Value>,
 }
 
-impl Into<Payload> for Custom {
-    fn into(self) -> Payload {
-        Payload::Custom(self.clone())
+impl From<Custom> for Payload {
+    fn from(val: Custom) -> Self {
+        Payload::Custom(val.clone())
     }
 }
 

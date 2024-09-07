@@ -113,7 +113,7 @@ impl Receiver {
             if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload {
                 if let Some(apps) = status.applications {
                     for app in apps {
-                        if &app.app_id == &app_id {
+                        if app.app_id == app_id {
                             // Establish new virtual connection to be able to send/receive app specific payloads
                             self.send(&app, Connection::Connect).await?;
                             return Ok(app);
@@ -153,10 +153,11 @@ impl Receiver {
             .send_request(&self.platform, receiver::Receiver::GetStatus)
             .await?;
 
-        if let Payload::Receiver(payload) = response.payload {
-            if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload {
-                return Ok(status);
-            }
+        if let Payload::Receiver(receiver::Receiver::ReceiverStatus(ReceiverStatusResponse {
+            status,
+        })) = response.payload
+        {
+            return Ok(status);
         }
 
         Err(Error::NoResponse)
@@ -248,16 +249,8 @@ impl Receiver {
             }
         }
 
-        match &response.payload {
-            Payload::Heartbeat(heartbeat_message) => {
-                match heartbeat_message {
-                    Heartbeat::Ping => {
-                        self.send(&self.platform, Heartbeat::Pong).await?;
-                    }
-                    _ => (),
-                };
-            }
-            _ => (),
+        if let Payload::Heartbeat(Heartbeat::Ping) = &response.payload {
+            self.send(&self.platform, Heartbeat::Pong).await?;
         }
 
         Ok(())
