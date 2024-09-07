@@ -162,6 +162,12 @@ impl Receiver {
     }
 
     pub async fn send<P: Into<Payload>>(&self, app: &Application, payload: P) -> Result<(), Error> {
+        let payload: Payload = payload.into();
+        let namespace = payload.namespace();
+        if !app.namespaces.contains(&namespace) {
+            return Err(Error::UnsupportedNamespace);
+        }
+
         let client = match self.client().await {
             Some(client) => client,
             None => {
@@ -169,9 +175,7 @@ impl Receiver {
             }
         };
 
-        client
-            .send(app.transport_id.clone(), payload.into(), None)
-            .await?;
+        client.send(app.transport_id.clone(), payload, None).await?;
         Ok(())
     }
 
@@ -180,6 +184,12 @@ impl Receiver {
         app: &Application,
         payload: P,
     ) -> Result<Response, Error> {
+        let payload: Payload = payload.into();
+        let namespace = payload.namespace();
+        if !app.namespaces.contains(&namespace) {
+            return Err(Error::UnsupportedNamespace);
+        }
+
         let client = match self.client().await {
             Some(client) => client,
             None => {
@@ -202,7 +212,7 @@ impl Receiver {
         drop(requests);
 
         client
-            .send(app.transport_id.clone(), payload.into(), Some(request_id))
+            .send(app.transport_id.clone(), payload, Some(request_id))
             .await?;
 
         // Wait up to 10 seconds before giving up the request

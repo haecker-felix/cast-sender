@@ -33,6 +33,9 @@ pub enum Error {
     #[error("Unable to launch app: {0}")]
     LaunchError(String),
 
+    #[error("Unsupported Namespace")]
+    UnsupportedNamespace,
+
     #[error("Media Channel Error: {0}")]
     MediaError(MediaError),
 

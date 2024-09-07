@@ -14,13 +14,19 @@ pub struct MediaController {
 }
 
 impl MediaController {
-    pub fn new(app: Application, receiver: Receiver) -> Self {
-        // TODO: Verify if app supports media namespace
-        Self {
+    pub fn new(app: Application, receiver: Receiver) -> Result<Self, Error> {
+        if !app
+            .namespaces
+            .contains(&crate::namespace::NamespaceUrn::Media)
+        {
+            return Err(Error::UnsupportedNamespace);
+        }
+
+        Ok(Self {
             app,
             receiver,
             media_session_id: Arc::default(),
-        }
+        })
     }
 
     pub async fn load(&self, media: MediaInformation) -> Result<(), Error> {

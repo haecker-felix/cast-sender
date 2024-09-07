@@ -12,7 +12,7 @@ pub mod media;
 pub mod multizone;
 pub mod receiver;
 
-#[derive(EnumString, Display, Debug, Clone, Default)]
+#[derive(EnumString, Display, Debug, Clone, Default, PartialEq, Eq)]
 pub enum NamespaceUrn {
     #[strum(serialize = "urn:x-cast:com.google.cast.cac")]
     Cac,
