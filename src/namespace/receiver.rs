@@ -1,4 +1,4 @@
-use crate::{Application, Payload, Volume};
+use crate::{app::AppId, App, Payload, Volume};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -26,8 +26,10 @@ impl Receiver {
         })
     }
 
-    pub fn launch_request(app_id: String) -> Self {
-        Self::Launch(LaunchRequest { app_id })
+    pub fn launch_request(app_id: AppId) -> Self {
+        Self::Launch(LaunchRequest {
+            app_id: app_id.to_string(),
+        })
     }
 
     pub fn stop_request(session_id: String) -> Self {
@@ -74,7 +76,7 @@ pub struct LaunchErrorResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
-    pub applications: Option<Vec<Application>>,
+    pub applications: Option<Vec<App>>,
     pub is_active_input: Option<bool>,
     pub is_standby: Option<bool>,
     pub volume: Volume,

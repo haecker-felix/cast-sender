@@ -8,15 +8,21 @@ use async_net::AsyncToSocketAddrs;
 use smol::lock::Mutex;
 use smol_timeout::TimeoutExt;
 
-use crate::namespace::{connection::*, heartbeat::*, receiver, receiver::*};
-use crate::{Application, Response, Volume};
+use crate::app::AppId;
+use crate::namespace::{
+    connection::*,
+    heartbeat::*,
+    receiver::{self, *},
+    NamespaceUrn,
+};
+use crate::{App, Response, Volume};
 
 use super::{Client, Error, Payload};
 
 #[derive(Debug, Clone)]
 pub struct Receiver {
     client: Arc<Mutex<Option<Client>>>,
-    platform: Application,
+    platform: App,
 
     // Ids for request messages which get incremented
     request_id: Arc<Mutex<u32>>,
@@ -27,7 +33,7 @@ impl Receiver {
     pub fn new() -> Self {
         Self {
             client: Arc::default(),
-            platform: Application::receiver(),
+            platform: App::receiver(),
             request_id: Arc::default(),
             requests: Arc::default(),
         }
@@ -92,11 +98,11 @@ impl Receiver {
     }
 
     /// Currently running applications
-    pub async fn applications(&self) -> Result<Vec<Application>, Error> {
+    pub async fn applications(&self) -> Result<Vec<App>, Error> {
         Ok(self.status().await?.applications.unwrap_or_default())
     }
 
-    pub async fn launch_app(&self, app_id: String) -> Result<Application, Error> {
+    pub async fn launch_app(&self, app_id: AppId) -> Result<App, Error> {
         let response = self
             .send_request(
                 &self.platform,
@@ -112,7 +118,7 @@ impl Receiver {
             if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload {
                 if let Some(apps) = status.applications {
                     for app in apps {
-                        if app.app_id == app_id {
+                        if &app.app_id == &app_id {
                             // Establish new virtual connection to be able to send/receive app specific payloads
                             self.send(&app, Connection::Connect).await?;
                             return Ok(app);
@@ -125,7 +131,7 @@ impl Receiver {
         Err(Error::NoResponse)
     }
 
-    pub async fn stop_app(&self, app: &Application) -> Result<(), Error> {
+    pub async fn stop_app(&self, app: &App) -> Result<(), Error> {
         self.send_request(
             &self.platform,
             receiver::Receiver::stop_request(app.session_id.clone()),
@@ -161,10 +167,14 @@ impl Receiver {
         Err(Error::NoResponse)
     }
 
-    pub async fn send<P: Into<Payload>>(&self, app: &Application, payload: P) -> Result<(), Error> {
+    pub async fn send<P: Into<Payload>>(&self, app: &App, payload: P) -> Result<(), Error> {
         let payload: Payload = payload.into();
         let namespace = payload.namespace();
-        if !app.namespaces.contains(&namespace) {
+        if !app.namespaces.contains(&namespace) && namespace != NamespaceUrn::Connection {
+            debug!(
+                "Unsupported namespace {}, app supports: {:#?}",
+                namespace, app.namespaces
+            );
             return Err(Error::UnsupportedNamespace);
         }
 
@@ -181,12 +191,17 @@ impl Receiver {
 
     pub async fn send_request<P: Into<Payload>>(
         &self,
-        app: &Application,
+        app: &App,
         payload: P,
     ) -> Result<Response, Error> {
         let payload: Payload = payload.into();
         let namespace = payload.namespace();
-        if !app.namespaces.contains(&namespace) {
+        if !app.namespaces.contains(&namespace) && namespace != NamespaceUrn::Connection {
+            dbg!(&payload);
+            debug!(
+                "Unsupported namespace {}, app supports: {:#?}",
+                namespace, app.namespaces
+            );
             return Err(Error::UnsupportedNamespace);
         }
 

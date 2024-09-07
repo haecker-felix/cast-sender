@@ -11,7 +11,7 @@ mod proto {
     include!(concat!(env!("OUT_DIR"), "/openscreen.cast.proto.rs"));
 }
 
-mod application;
+mod app;
 mod client;
 mod error;
 mod media_controller;
@@ -20,7 +20,7 @@ mod payload;
 mod receiver;
 mod shared;
 
-pub use application::Application;
+pub use app::{App, AppId};
 pub use client::{Client, Response};
 pub use error::Error;
 pub use media_controller::MediaController;

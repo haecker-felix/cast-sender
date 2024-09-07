@@ -3,18 +3,18 @@ use std::sync::Arc;
 use smol::lock::Mutex;
 
 use crate::namespace::media::*;
-use crate::{Application, Error, Payload, Receiver, Response};
+use crate::{App, Error, Payload, Receiver, Response};
 
 #[derive(Clone, Debug)]
 pub struct MediaController {
-    app: Application,
+    app: App,
     receiver: Receiver,
 
     media_session_id: Arc<Mutex<i32>>,
 }
 
 impl MediaController {
-    pub fn new(app: Application, receiver: Receiver) -> Result<Self, Error> {
+    pub fn new(app: App, receiver: Receiver) -> Result<Self, Error> {
         if !app
             .namespaces
             .contains(&crate::namespace::NamespaceUrn::Media)
