@@ -9,6 +9,9 @@ pub enum Error {
     #[error("Input/Output error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("Input/Output error: {0}")]
+    AddrParseError(#[from] std::net::AddrParseError),
+
     #[error("TLS error: {0}")]
     Tls(#[from] async_native_tls::Error),
 

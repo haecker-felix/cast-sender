@@ -1,7 +1,8 @@
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
-use async_native_tls::{Host, TlsConnector, TlsStream};
-use async_net::{AsyncToSocketAddrs, TcpStream};
+use async_native_tls::{TlsConnector, TlsStream};
+use async_net::TcpStream;
 use futures_util::io::{ReadHalf, WriteHalf};
 use futures_util::{AsyncReadExt, AsyncWriteExt};
 use prost::Message;
@@ -30,15 +31,15 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn connect<A: AsyncToSocketAddrs + Into<Host> + Clone>(
-        addr: A,
-    ) -> Result<Self, Error> {
+    pub async fn connect(addr: &str) -> Result<Self, Error> {
+        let addr = SocketAddr::new(addr.parse()?, 8009);
+
         // Casts devices are using self signed certs
         let tls_connector = TlsConnector::new().danger_accept_invalid_certs(true);
         let tcp_stream = TcpStream::connect(&addr).await?;
 
         let tls_stream = tls_connector
-            .connect(addr.clone(), tcp_stream.clone())
+            .connect(addr.to_string(), tcp_stream.clone())
             .await?;
 
         let (read_stream, write_stream) = tls_stream.split();

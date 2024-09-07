@@ -3,8 +3,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_channel::Sender;
-use async_native_tls::Host;
-use async_net::AsyncToSocketAddrs;
 use smol::lock::Mutex;
 use smol_timeout::TimeoutExt;
 
@@ -39,10 +37,7 @@ impl Receiver {
         }
     }
 
-    pub async fn connect<A: AsyncToSocketAddrs + Into<Host> + Clone>(
-        &self,
-        addr: A,
-    ) -> Result<(), Error> {
+    pub async fn connect(&self, addr: &str) -> Result<(), Error> {
         let client = Client::connect(addr).await?;
         self.client.lock().await.replace(client.clone());
 
