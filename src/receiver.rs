@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,10 +9,10 @@ use smol_timeout::TimeoutExt;
 
 use crate::app::AppId;
 use crate::namespace::{
+    NamespaceUrn,
     connection::*,
     heartbeat::*,
     receiver::{self, *},
-    NamespaceUrn,
 };
 use crate::{App, Response, Volume};
 
@@ -39,7 +40,7 @@ impl Receiver {
         }
     }
 
-    pub async fn connect(&self, addr: &str) -> Result<(), Error> {
+    pub async fn connect(&self, addr: IpAddr) -> Result<(), Error> {
         let client = Client::connect(addr).await?;
         self.client.lock().await.replace(client.clone());
 
@@ -113,15 +114,16 @@ impl Receiver {
             }
 
             if let receiver::Receiver::ReceiverStatus(ReceiverStatusResponse { status }) = payload
-                && let Some(apps) = status.applications {
-                    for app in apps {
-                        if app.app_id == app_id {
-                            // Establish new virtual connection to be able to send/receive app specific payloads
-                            self.send(&app, Connection::Connect).await?;
-                            return Ok(app);
-                        }
+                && let Some(apps) = status.applications
+            {
+                for app in apps {
+                    if app.app_id == app_id {
+                        // Establish new virtual connection to be able to send/receive app specific payloads
+                        self.send(&app, Connection::Connect).await?;
+                        return Ok(app);
                     }
                 }
+            }
         }
 
         Err(Error::NoResponse)
@@ -251,12 +253,13 @@ impl Receiver {
     async fn process_response(&self, response: Response) -> Result<(), Error> {
         // Check if this payload is a response to a sent request
         if let Some(request_id) = response.request_id
-            && request_id != 0 {
-                match self.requests.lock().await.remove(&request_id) {
-                    Some(sender) => sender.send(response.clone()).await.map_err(Box::new)?,
-                    None => debug!("Ignore payload with unknown requestId"),
-                }
+            && request_id != 0
+        {
+            match self.requests.lock().await.remove(&request_id) {
+                Some(sender) => sender.send(response.clone()).await.map_err(Box::new)?,
+                None => debug!("Ignore payload with unknown requestId"),
             }
+        }
 
         if let Payload::Heartbeat(Heartbeat::Ping) = &response.payload {
             self.send(&self.platform, Heartbeat::Pong).await?;
