@@ -11,7 +11,7 @@ use cast_sender::{AppId, Error, ImageBuilder, MediaController, Receiver};
 #[apply(main!)]
 async fn main() -> Result<(), Error> {
     let receiver = Receiver::new();
-    receiver.connect("192.168.178.50").await?;
+    receiver.connect("192.168.178.50".parse().unwrap()).await?;
 
     let app = receiver.launch_app(AppId::DefaultMediaReceiver).await?;
     let media_controller = MediaController::new(app.clone(), receiver.clone())?;
